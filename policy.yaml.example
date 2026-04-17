@@ -1,0 +1,16 @@
+naming_regex: "^(SEC|DL|APP)_.*"
+max_members: 500
+review_recency_days: 90
+stale_days: 730
+privileged_keywords:
+  - "Admin"
+  - "Server"
+  - "LAPS"
+  - "RBAC"
+  - "Root"
+privileged_review_days: 90
+acl_allow_list:
+  - "Domain Admins"
+  - "Enterprise Admins"
+# Scope queries to a specific OU (leave empty for entire domain)
+search_base: ""

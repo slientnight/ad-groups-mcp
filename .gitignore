@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# SQLite databases (contain review data specific to your environment)
+*.db
+*.db-shm
+*.db-wal
+
+# Policy config (contains environment-specific settings — use policy.yaml.example as template)
+policy.yaml
+
+# Hypothesis test cache (contains local file paths)
+.hypothesis/
+
+# pytest cache
+.pytest_cache/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Generated reports
+*.html
+!docs/*.html
+
+# Kiro workspace config (contains local MCP settings)
+.kiro/
+
+# Environment variables
+.env
+.env.local
