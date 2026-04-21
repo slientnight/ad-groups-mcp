@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime, timezone
 
-from ad_groups_mcp.models import MembershipSnapshot, ReviewRecord
+from ad_groups_mcp.models import AuditSnapshot, MembershipSnapshot, ReviewRecord
 
 EXPECTED_COLUMNS = {"id", "group_dn", "reviewer", "reviewed_at"}
 
@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS membership_snapshots (
 );
 """
 
+CREATE_AUDIT_SNAPSHOTS_SQL = """\
+CREATE TABLE IF NOT EXISTS audit_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    compliance_pct REAL NOT NULL,
+    total_groups INTEGER NOT NULL,
+    compliant_count INTEGER NOT NULL,
+    snapshot_at TEXT NOT NULL
+);
+"""
+
 
 class SQLiteStore:
     """Manages a local SQLite database for persisting governance review records."""
@@ -44,6 +54,7 @@ class SQLiteStore:
         self._conn.execute("PRAGMA journal_mode=WAL;")
         self._conn.execute(CREATE_TABLE_SQL)
         self._conn.execute(CREATE_SNAPSHOTS_SQL)
+        self._conn.execute(CREATE_AUDIT_SNAPSHOTS_SQL)
         self._conn.commit()
         self._verify_schema()
 
@@ -163,3 +174,46 @@ class SQLiteStore:
             "delta": delta,
             "change_pct": round(pct, 1),
         }
+
+    # ------------------------------------------------------------------
+    # Audit snapshots
+    # ------------------------------------------------------------------
+
+    def record_audit_snapshot(
+        self, compliance_pct: float, total_groups: int, compliant_count: int
+    ) -> dict:
+        """Record aggregate audit metrics for trend tracking."""
+        assert self._conn is not None
+        now = datetime.now(timezone.utc)
+        self._conn.execute(
+            "INSERT INTO audit_snapshots (compliance_pct, total_groups, compliant_count, snapshot_at) "
+            "VALUES (?, ?, ?, ?);",
+            (compliance_pct, total_groups, compliant_count, now.isoformat()),
+        )
+        self._conn.commit()
+        return {
+            "compliance_pct": compliance_pct,
+            "total_groups": total_groups,
+            "compliant_count": compliant_count,
+            "snapshot_at": now.isoformat(),
+        }
+
+    def get_audit_snapshots(self, limit: int = 30) -> list[dict]:
+        """Return the most recent `limit` audit snapshots, oldest first."""
+        assert self._conn is not None
+        cursor = self._conn.execute(
+            "SELECT compliance_pct, total_groups, compliant_count, snapshot_at "
+            "FROM audit_snapshots ORDER BY id DESC LIMIT ?;",
+            (limit,),
+        )
+        rows = [
+            {
+                "compliance_pct": row["compliance_pct"],
+                "total_groups": row["total_groups"],
+                "compliant_count": row["compliant_count"],
+                "snapshot_at": row["snapshot_at"],
+            }
+            for row in cursor.fetchall()
+        ]
+        rows.reverse()  # oldest first
+        return rows

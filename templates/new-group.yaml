@@ -1,0 +1,32 @@
+# AD Security Group Creation Template
+# Fill in the values below, then paste into chat with:
+#   "Create the PowerShell to build this AD group"
+#
+# Group name is auto-built: {prefix}-{system}-{role}
+
+# --- Group Name Components (builds: Prefix-System-Role) ---
+prefix: ""              # Org or department prefix
+system: ""              # System or application name
+role: ""                # Access level (Admin, Users, Helpdesk, RW, RO)
+
+# --- Group Details ---
+description: ""         # Optional — auto-generated from fields above if left blank
+owner_dn: ""            # Owner DN, e.g. CN=jsmith,OU=Users,DC=example,DC=com
+target_ou: ""           # Target OU, e.g. OU=MyGroups,OU=MyOrg,DC=example,DC=com
+
+# --- Creator Info ---
+created_by: ""          # Your username
+created_date: ""        # Today's date, YYYY-MM-DD
+initials: ""            # Your initials
+
+# --- Classification ---
+classification: ""      # privileged or standard
+ticket: ""              # Ticket number or justification
+
+# --- Lifecycle ---
+sunset_date: ""         # Expiration YYYY-MM-DD, or "permanent"
+
+# --- Optional: Initial Members ---
+members:
+  # - username1
+  # - CN=jdoe,OU=Users,DC=example,DC=com

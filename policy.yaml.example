@@ -1,4 +1,6 @@
-naming_regex: "^(SEC|DL|APP)_.*"
+naming_regex: "^[A-Z]{4,8}[-_].+"
+# Format: {OrgPrefix}-{System/Dept}-{Role}
+# New groups SHOULD use dashes: Prefix-System-Role
 max_members: 500
 review_recency_days: 90
 stale_days: 730
@@ -14,3 +16,9 @@ acl_allow_list:
   - "Enterprise Admins"
 # Scope queries to a specific OU (leave empty for entire domain)
 search_base: ""
+
+# Optional: Map logical review fields to AD extended attribute names.
+# Defaults shown below — only needed if your environment uses different attribute slots.
+# extended_attribute_mapping:
+#   reviewed_by: extensionAttribute1
+#   reviewed_date: extensionAttribute2

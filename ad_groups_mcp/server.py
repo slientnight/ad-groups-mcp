@@ -24,6 +24,7 @@ from ad_groups_mcp.models import (
     ToolError,
 )
 from ad_groups_mcp.policy_engine import PolicyEngine
+from ad_groups_mcp.review_resolver import resolve_review
 from ad_groups_mcp.sqlite_store import SQLiteStore
 
 logger = logging.getLogger(__name__)
@@ -165,12 +166,17 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
         except Exception:
             logger.warning("Failed to retrieve replication metadata for %s", identity)
 
-        # Enrich: review record
-        last_review = None
+        # Enrich: review record via resolve_review (AD attrs + SQLite)
+        ext_attr1 = raw.get("extensionAttribute1")
+        ext_attr2 = raw.get("extensionAttribute2")
+
+        sqlite_review = None
         try:
-            last_review = store.get_review(dn)
+            sqlite_review = store.get_review(dn)
         except Exception:
             logger.warning("Failed to retrieve review record for %s", dn)
+
+        review, review_source = resolve_review(ext_attr1, ext_attr2, sqlite_review)
 
         # Parse timestamps
         when_created = _parse_ad_datetime(raw.get("whenCreated"))
@@ -187,7 +193,10 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
             when_changed=when_changed,
             member_count=member_count,
             replication_metadata=repl_meta,
-            last_review=last_review,
+            last_review=review,
+            extension_attribute_1=ext_attr1,
+            extension_attribute_2=ext_attr2,
+            review_source=review_source,
         )
 
     # ------------------------------------------------------------------
@@ -200,8 +209,7 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
         if isinstance(detail, ToolError):
             return detail
 
-        review = store.get_review(detail.distinguished_name)
-        return engine.evaluate(detail, review)
+        return engine.evaluate(detail, detail.last_review)
 
     # ------------------------------------------------------------------
     # Tool 5: audit_group_inventory
@@ -231,8 +239,7 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
                     errors.append(f"{dn}: {detail.message}")
                     continue
 
-                review = store.get_review(detail.distinguished_name)
-                eval_result = engine.evaluate(detail, review)
+                eval_result = engine.evaluate(detail, detail.last_review)
 
                 if eval_result.compliant:
                     compliant_count += 1
@@ -285,15 +292,49 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
                 message="A non-empty group distinguished name is required.",
             )
 
+        from ad_groups_mcp.ad_query import set_ad_group_review_attrs
+
+        warnings: list[str] = []
+        sqlite_record = None
+        ad_write_ok = False
+        review_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # SQLite write
         try:
-            record = store.record_review(group_dn.strip(), reviewer)
-            return ReviewConfirmation(
-                group_dn=record.group_dn,
-                reviewer=record.reviewer,
-                reviewed_at=record.reviewed_at,
-            )
+            sqlite_record = store.record_review(group_dn.strip(), reviewer)
         except Exception as exc:
-            return ToolError(code="STORE_ERROR", message=str(exc))
+            warnings.append(f"SQLite write failed: {exc}")
+
+        # AD write
+        try:
+            await set_ad_group_review_attrs(
+                group_dn.strip(),
+                reviewer,
+                review_date,
+                policy_config.extended_attribute_mapping,
+            )
+            ad_write_ok = True
+        except Exception as exc:
+            warnings.append(f"AD attribute write failed: {exc}")
+
+        if sqlite_record is None and not ad_write_ok:
+            return ToolError(
+                code="STORE_ERROR",
+                message="Both SQLite and AD writes failed. " + "; ".join(warnings),
+            )
+
+        reviewed_at = (
+            sqlite_record.reviewed_at
+            if sqlite_record is not None
+            else datetime.now(timezone.utc)
+        )
+
+        return ReviewConfirmation(
+            group_dn=group_dn.strip(),
+            reviewer=reviewer,
+            reviewed_at=reviewed_at,
+            warnings=warnings,
+        )
 
     # ------------------------------------------------------------------
     # Tool 8: get_group_review
@@ -432,6 +473,71 @@ def create_server(policy_config: PolicyConfig, store: SQLiteStore) -> FastMCP:
             "stale_reviews": stale,
             "unreviewed_groups": unreviewed_list[:50],  # cap at 50 for readability
             "stale_review_groups": stale_list[:50],
+        }
+
+    # ------------------------------------------------------------------
+    # Tool 14: check_365_sync
+    # ------------------------------------------------------------------
+    @mcp.tool()
+    async def check_365_sync() -> dict | ToolError:
+        """Check which groups are synced to Microsoft 365 / Entra ID.
+
+        Detects sync via mail, proxyAddresses, and msDS-ExternalDirectoryObjectId
+        attributes. Uses the configured search_base from policy.yaml.
+        """
+        from ad_groups_mcp.ad_query import run_ps_command
+
+        search_base_clause = ""
+        if policy_config.search_base:
+            safe_base = policy_config.search_base.replace("'", "''")
+            search_base_clause = f"-SearchBase '{safe_base}' -SearchScope OneLevel "
+
+        script = (
+            f"Get-ADGroup -Filter * {search_base_clause}"
+            "-Properties SamAccountName,mail,proxyAddresses,"
+            "'msDS-ExternalDirectoryObjectId',GroupScope,GroupCategory "
+            "| Select-Object SamAccountName,mail,"
+            "@{N='proxyAddresses';E={($_.proxyAddresses -join ';')}},"
+            "@{N='externalId';E={$_.'msDS-ExternalDirectoryObjectId'}},"
+            "GroupScope,GroupCategory "
+            "| ConvertTo-Json -Depth 3"
+        )
+
+        try:
+            result = await run_ps_command(script, timeout=60)
+        except Exception as exc:
+            return ToolError(code="AD_UNREACHABLE", message=str(exc))
+
+        if isinstance(result, dict):
+            result = [result] if result else []
+
+        synced = []
+        not_synced = []
+        for g in result:
+            name = g.get("SamAccountName", "")
+            mail = g.get("mail") or ""
+            proxy = g.get("proxyAddresses") or ""
+            ext_id = g.get("externalId") or ""
+
+            is_synced = bool(ext_id) or bool(mail) or bool(proxy)
+            entry = {
+                "name": name,
+                "mail": mail,
+                "proxy_addresses": proxy,
+                "external_directory_id": ext_id,
+                "is_privileged": engine.is_privileged(name),
+            }
+            if is_synced:
+                synced.append(entry)
+            else:
+                not_synced.append(entry)
+
+        return {
+            "total_groups": len(result),
+            "synced_count": len(synced),
+            "not_synced_count": len(not_synced),
+            "synced_groups": synced,
+            "not_synced_groups": [{"name": g["name"]} for g in not_synced],
         }
 
     return mcp

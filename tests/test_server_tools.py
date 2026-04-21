@@ -183,3 +183,63 @@ class TestBulkAuditErrorIsolation:
         assert len(result.errors) >= 1
         # The good group should have been evaluated
         assert result.compliant_count + len(result.per_group_violations) >= 1
+
+
+# ---------------------------------------------------------------------------
+# 5.5 — Dual-write partial failure scenarios (Req 3.4, 3.5)
+# ---------------------------------------------------------------------------
+
+class TestDualWritePartialFailures:
+    @pytest.mark.asyncio
+    async def test_dual_write_ad_failure(self, server, store):
+        """Req 3.4: AD write fails → SQLite write succeeds + warning returned."""
+        tool_fn = server._tool_manager._tools["record_group_review"].fn
+        group_dn = "CN=SEC_TestGroup,OU=Groups,DC=example,DC=com"
+
+        with patch(
+            "ad_groups_mcp.ad_query.set_ad_group_review_attrs",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("Insufficient permissions"),
+        ):
+            result = await tool_fn(group_dn=group_dn, reviewer="jsmith")
+
+        # Should succeed (not a ToolError)
+        assert not isinstance(result, ToolError)
+        assert result.group_dn == group_dn
+        assert result.reviewer == "jsmith"
+        # Should have a warning about AD failure
+        assert len(result.warnings) == 1
+        assert "AD attribute write failed" in result.warnings[0]
+        # SQLite write should have succeeded
+        sqlite_review = store.get_review(group_dn)
+        assert sqlite_review is not None
+        assert sqlite_review.reviewer == "jsmith"
+
+    @pytest.mark.asyncio
+    async def test_dual_write_sqlite_failure(self, server, store):
+        """Req 3.5: SQLite write fails → AD write succeeds + warning returned."""
+        tool_fn = server._tool_manager._tools["record_group_review"].fn
+        group_dn = "CN=SEC_TestGroup,OU=Groups,DC=example,DC=com"
+
+        with (
+            patch.object(
+                store,
+                "record_review",
+                side_effect=RuntimeError("Disk full"),
+            ),
+            patch(
+                "ad_groups_mcp.ad_query.set_ad_group_review_attrs",
+                new_callable=AsyncMock,
+            ) as mock_ad_write,
+        ):
+            result = await tool_fn(group_dn=group_dn, reviewer="jsmith")
+
+        # Should succeed (not a ToolError)
+        assert not isinstance(result, ToolError)
+        assert result.group_dn == group_dn
+        assert result.reviewer == "jsmith"
+        # Should have a warning about SQLite failure
+        assert len(result.warnings) == 1
+        assert "SQLite write failed" in result.warnings[0]
+        # AD write should have been called
+        mock_ad_write.assert_called_once()

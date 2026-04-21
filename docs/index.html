@@ -1,2 +1,1190 @@
 <!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0; url=demo_report.html"></head></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AD Groups SOP Compliance Audit</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #0f3460;
+  --text: #e0e0e0;
+  --text-muted: #8892a4;
+  --accent: #4fc3f7;
+  --green: #66bb6a;
+  --red: #ef5350;
+  --yellow: #ffa726;
+  --border: #2a2a4a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 2rem;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+h2 { font-size: 1.15rem; font-weight: 600; margin: 2rem 0 1rem; color: var(--accent); }
+h3 { font-size: 1rem; font-weight: 500; margin: 1.5rem 0 0.75rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+th {
+  text-align: left; padding: 0.75rem 1rem; font-weight: 600; font-size: 0.85rem;
+  color: var(--text-muted); border-bottom: 2px solid var(--border);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+td {
+  padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+}
+tr:hover { background: rgba(79, 195, 247, 0.05); }
+.rule-name { font-weight: 600; }
+code {
+  background: var(--surface2); padding: 0.15rem 0.4rem; border-radius: 3px;
+  font-size: 0.82rem; font-family: 'Cascadia Code', 'Fira Code', monospace;
+}
+.badge {
+  display: inline-block; padding: 0.15rem 0.6rem; border-radius: 10px;
+  font-size: 0.78rem; font-weight: 600;
+}
+.badge-pass { background: rgba(102, 187, 106, 0.15); color: var(--green); }
+.badge-fail { background: rgba(239, 83, 80, 0.15); color: var(--red); }
+.badge-warn { background: rgba(255, 167, 38, 0.15); color: var(--yellow); }
+.rate-good { color: var(--green); font-weight: 600; }
+.rate-warn { color: var(--yellow); font-weight: 600; }
+.rate-bad { color: var(--red); font-weight: 600; }
+details {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; margin-bottom: 0.5rem;
+}
+details[open] { border-color: var(--accent); }
+summary {
+  padding: 0.75rem 1rem; cursor: pointer; font-size: 0.9rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+summary:hover { background: rgba(79, 195, 247, 0.05); }
+summary::marker { color: var(--accent); }
+.detail-body { padding: 0 1rem 1rem; }
+.detail-body table { margin-bottom: 0.5rem; }
+.detail-meta { color: var(--text-muted); font-size: 0.82rem; }
+.stat-row { display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem 1.5rem; min-width: 160px; flex: 1;
+}
+.stat-value { font-size: 2rem; font-weight: 700; }
+.stat-label { color: var(--text-muted); font-size: 0.82rem; margin-top: 0.25rem; }
+.group-name { font-weight: 600; flex: 1; }
+.group-status { font-size: 0.82rem; }
+.section-list { list-style: none; padding: 0; }
+.section-list li {
+  padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+  font-size: 0.88rem; display: flex; justify-content: space-between;
+}
+.section-list li:last-child { border-bottom: none; }
+.nav-bar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.75rem 1rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.nav-bar a {
+  color: var(--accent); text-decoration: none; font-size: 0.82rem; padding: 0.3rem 0.7rem;
+  border-radius: 4px; background: var(--surface2); transition: background 0.2s;
+}
+.nav-bar a:hover { background: rgba(79, 195, 247, 0.15); }
+footer {
+  margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+  color: var(--text-muted); font-size: 0.8rem; text-align: center;
+}
+[data-theme="light"] {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface2: #e8e8e8;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --accent: #1976d2;
+  --border: #d0d0d0;
+}
+@media print {
+  .nav-bar,
+  .theme-toggle,
+  .filter-section,
+  .pdf-export-btn,
+  .compare-btn {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+  }
+
+  .stat-card {
+    border: 1px solid #ccc !important;
+  }
+
+  .badge-pass {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+  }
+
+  .badge-fail {
+    background: #ffebee !important;
+    color: #c62828 !important;
+  }
+
+  .badge-warn {
+    background: #fff3e0 !important;
+    color: #e65100 !important;
+  }
+
+  details {
+    display: block !important;
+    border: 1px solid #ccc !important;
+  }
+
+  details > summary {
+    pointer-events: none;
+  }
+
+  details > .detail-body {
+    display: block !important;
+  }
+
+  #compliance {
+    page-break-before: always;
+  }
+
+  #review-coverage {
+    page-break-before: always;
+  }
+
+  #privileged {
+    page-break-before: always;
+  }
+
+  #group-details {
+    page-break-before: always;
+  }
+
+  a {
+    text-decoration: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>AD Groups SOP Compliance Audit</h1>
+<p class="subtitle">Corp-Groups OU &mdash; 10 groups &mdash; Generated 2026-04-20 20:06 UTC</p>
+
+<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem">
+<button class="theme-toggle" onclick="toggleTheme()" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:0.4rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:600">&#127763; Toggle Theme</button>
+<script>
+(function() {
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+  function getStoredTheme() {
+    try { return localStorage.getItem('audit-report-theme'); } catch(e) { return null; }
+  }
+  function storeTheme(theme) {
+    try { localStorage.setItem('audit-report-theme', theme); } catch(e) {}
+  }
+  var saved = getStoredTheme();
+  if (saved) { applyTheme(saved); }
+  window.toggleTheme = function() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    storeTheme(next);
+  };
+})();
+</script>
+<button class="pdf-export-btn" onclick="window.print()" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:0.4rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:600">&#128438;&#65039; Export to PDF</button>
+<button class="compare-btn" id="compare-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:0.4rem 1rem;cursor:pointer;font-size:0.85rem;font-weight:600" onclick="document.getElementById('compare-file-input').click()">&#128260; Compare Reports</button>
+<input type="file" id="compare-file-input" accept=".html,.htm" style="display:none">
+<div id="comparison-results" style="display:none;margin-top:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem"></div>
+<script>
+(function() {
+  var fileInput = document.getElementById('compare-file-input');
+  var resultsDiv = document.getElementById('comparison-results');
+
+  function getCurrentMetadata() {
+    var el = document.getElementById('report-metadata');
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch(e) { return null; }
+  }
+
+  function extractMetadata(htmlText) {
+    var re = /<script[^>]*id="report-metadata"[^>]*>([\s\S]*?)<\/script>/;
+    var m = re.exec(htmlText);
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch(e) { return null; }
+  }
+
+  function buildGroupMap(groups) {
+    var map = {};
+    for (var i = 0; i < groups.length; i++) {
+      map[groups[i].name] = groups[i];
+    }
+    return map;
+  }
+
+  function diffMetadata(current, other) {
+    var d = {};
+    d.delta_total = current.total_groups - other.total_groups;
+    d.delta_compliance = Math.round((current.compliance_pct - other.compliance_pct) * 10) / 10;
+    var curMap = buildGroupMap(current.groups || []);
+    var othMap = buildGroupMap(other.groups || []);
+    var allNames = {};
+    var k;
+    for (k in curMap) { allNames[k] = true; }
+    for (k in othMap) { allNames[k] = true; }
+    d.newly_compliant = 0;
+    d.newly_non_compliant = 0;
+    d.added = [];
+    d.removed = [];
+    d.changed = [];
+    for (k in allNames) {
+      var inCur = curMap.hasOwnProperty(k);
+      var inOth = othMap.hasOwnProperty(k);
+      if (inCur && !inOth) {
+        d.added.push(k);
+      } else if (!inCur && inOth) {
+        d.removed.push(k);
+      } else {
+        var cg = curMap[k];
+        var og = othMap[k];
+        if (cg.compliant && !og.compliant) d.newly_compliant++;
+        if (!cg.compliant && og.compliant) d.newly_non_compliant++;
+        if (cg.compliant !== og.compliant || cg.member_count !== og.member_count) {
+          d.changed.push({
+            name: k,
+            old_compliant: og.compliant,
+            new_compliant: cg.compliant,
+            old_members: og.member_count,
+            new_members: cg.member_count
+          });
+        }
+      }
+    }
+    return d;
+  }
+
+  function sign(n) { return n > 0 ? '+' + n : '' + n; }
+
+  function renderDiff(diff) {
+    var h = '<h2 style="margin-top:0;color:var(--accent)">Comparison Summary</h2>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem">';
+    h += '<div><strong>Total Groups:</strong> ' + sign(diff.delta_total) + '</div>';
+    h += '<div><strong>Compliance %:</strong> ' + sign(diff.delta_compliance) + '%</div>';
+    h += '<div><strong>Newly Compliant:</strong> ' + diff.newly_compliant + '</div>';
+    h += '<div><strong>Newly Non-Compliant:</strong> ' + diff.newly_non_compliant + '</div>';
+    h += '<div><strong>Added Groups:</strong> ' + diff.added.length + '</div>';
+    h += '<div><strong>Removed Groups:</strong> ' + diff.removed.length + '</div>';
+    h += '</div>';
+
+    // Added groups
+    if (diff.added.length) {
+      h += '<h3 style="color:var(--green);margin:0.75rem 0 0.25rem">Added Groups</h3><ul>';
+      for (var i = 0; i < diff.added.length; i++) h += '<li>' + diff.added[i] + '</li>';
+      h += '</ul>';
+    }
+    // Removed groups
+    if (diff.removed.length) {
+      h += '<h3 style="color:var(--red);margin:0.75rem 0 0.25rem">Removed Groups</h3><ul>';
+      for (var i = 0; i < diff.removed.length; i++) h += '<li>' + diff.removed[i] + '</li>';
+      h += '</ul>';
+    }
+    // Per-group diff table
+    if (diff.changed.length) {
+      h += '<h3 style="color:var(--accent);margin:0.75rem 0 0.25rem">Changed Groups</h3>';
+      h += '<table style="width:100%;border-collapse:collapse">';
+      h += '<thead><tr>';
+      h += '<th style="text-align:left;padding:0.5rem;border-bottom:2px solid var(--border)">Group</th>';
+      h += '<th style="text-align:center;padding:0.5rem;border-bottom:2px solid var(--border)">Compliance</th>';
+      h += '<th style="text-align:center;padding:0.5rem;border-bottom:2px solid var(--border)">Members</th>';
+      h += '</tr></thead><tbody>';
+      for (var i = 0; i < diff.changed.length; i++) {
+        var c = diff.changed[i];
+        var compStr = '';
+        if (c.old_compliant !== c.new_compliant) {
+          compStr = (c.old_compliant ? 'Compliant' : 'Non-Compliant') + ' \u2192 ' + (c.new_compliant ? 'Compliant' : 'Non-Compliant');
+        } else {
+          compStr = c.new_compliant ? 'Compliant' : 'Non-Compliant';
+        }
+        var memStr = '';
+        if (c.old_members !== c.new_members) {
+          memStr = c.old_members + ' \u2192 ' + c.new_members;
+        } else {
+          memStr = '' + c.new_members;
+        }
+        h += '<tr>';
+        h += '<td style="padding:0.4rem 0.5rem;border-bottom:1px solid var(--border)">' + c.name + '</td>';
+        h += '<td style="text-align:center;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border)">' + compStr + '</td>';
+        h += '<td style="text-align:center;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border)">' + memStr + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table>';
+    }
+
+    if (!diff.added.length && !diff.removed.length && !diff.changed.length) {
+      h += '<p style="color:var(--text-muted);font-style:italic">No differences found between the two reports.</p>';
+    }
+    return h;
+  }
+
+  fileInput.addEventListener('change', function() {
+    var file = fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var text = e.target.result;
+      var otherMeta = extractMetadata(text);
+      if (!otherMeta) {
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<p style="color:var(--red);font-weight:600">' +
+          'Selected file is not a valid audit report or was generated before comparison support was added.' +
+          '</p>';
+        return;
+      }
+      var currentMeta = getCurrentMetadata();
+      if (!currentMeta) {
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<p style="color:var(--red)">Current report metadata not found.</p>';
+        return;
+      }
+      var diff = diffMetadata(currentMeta, otherMeta);
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = renderDiff(diff);
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
+})();
+</script>
+</div>
+<nav class="nav-bar"><a href="#compliance">Overall Compliance</a><a href="#review-coverage">Review Coverage</a><a href="#privileged">Privileged Groups</a><a href="#stale">Stale Groups</a><a href="#drift">Membership Drift</a><a href="#scope-violations">Scope Violations</a><a href="#missing-desc">Missing Descriptions</a><a href="#group-details">Group Details</a></nav>
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value rate-bad">3/10</div>
+    <div class="stat-label">Policy Compliant</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value rate-bad">3/10</div>
+    <div class="stat-label">Reviews Completed (30%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color: var(--accent)">6</div>
+    <div class="stat-label">Privileged Groups (3 reviewed)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value rate-warn">3</div>
+    <div class="stat-label">Stale Groups (&gt;2yr)</div>
+  </div>
+</div>
+<p style="color:var(--text-muted);font-style:italic;margin:1rem 0">Insufficient data for trend chart — run more audits to see trends</p>
+<h2 id="compliance">Overall Compliance</h2>
+<table>
+<thead><tr>
+  <th>SOP Rule</th>
+  <th style="text-align:center">Compliant</th>
+  <th style="text-align:center">Non-Compliant</th>
+  <th style="text-align:center">Rate</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td class="rule-name">Scope = Universal</td>
+  <td style="text-align:center">8</td>
+  <td style="text-align:center">2</td>
+  <td style="text-align:center" class="rate-warn">80%</td>
+</tr>
+<tr>
+  <td class="rule-name">Type = Security</td>
+  <td style="text-align:center">10</td>
+  <td style="text-align:center">0</td>
+  <td style="text-align:center" class="rate-good">100%</td>
+</tr>
+<tr>
+  <td class="rule-name">Naming (correct prefix)</td>
+  <td style="text-align:center">10</td>
+  <td style="text-align:center">0</td>
+  <td style="text-align:center" class="rate-good">100%</td>
+</tr>
+<tr>
+  <td class="rule-name">Naming follows <code>Prefix-System/Function_Role/Access</code> format</td>
+  <td style="text-align:center">8</td>
+  <td style="text-align:center">2</td>
+  <td style="text-align:center" class="rate-warn">80%</td>
+</tr>
+<tr>
+  <td class="rule-name">Description field populated</td>
+  <td style="text-align:center">6</td>
+  <td style="text-align:center">4</td>
+  <td style="text-align:center" class="rate-warn">60%</td>
+</tr>
+<tr>
+  <td class="rule-name">Notes with author initials &amp; date</td>
+  <td style="text-align:center">4</td>
+  <td style="text-align:center">6</td>
+  <td style="text-align:center" class="rate-bad">40%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="review-coverage">Review Coverage</h2>
+<div style="margin-bottom:1rem">
+  <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.3rem">
+    <span>3 of 10 groups reviewed</span>
+    <span style="font-weight:600">30%</span>
+  </div>
+  <div style="background:var(--border);border-radius:6px;height:20px;overflow:hidden">
+    <div style="background:var(--red);height:100%;width:30.0%;border-radius:6px;transition:width 0.3s"></div>
+  </div>
+  <div style="display:flex;gap:2rem;margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)">
+    <span>Unreviewed: <strong style="color:var(--red)">7</strong></span>
+    <span>Stale reviews: <strong style="color:var(--yellow)">0</strong></span>
+  </div>
+</div>
+<h2 id="privileged">Privileged Groups (6 groups requiring quarterly review)</h2>
+<table>
+<thead><tr>
+  <th>Group</th><th>Description</th>
+  <th style="text-align:center">Review Status</th><th>Last Review</th>
+</tr></thead>
+<tbody><tr>
+  <td><code>ACME-Endpoint-Admins</code></td>
+  <td class="detail-meta">Members of this group have admin access to the endpoint management console.</td>
+  <td style="text-align:center"><span class="badge badge-pass">CURRENT</span></td>
+  <td class="detail-meta">jsmith on 2026-03-20</td>
+</tr>
+<tr>
+  <td><code>ACME-ITS-Server-Admin</code></td>
+  <td class="detail-meta">Admin access for server management. JS 12/11/25</td>
+  <td style="text-align:center"><span class="badge badge-fail">OVERDUE</span></td>
+  <td class="detail-meta">Never reviewed</td>
+</tr>
+<tr>
+  <td><code>ACME-ADMIN</code></td>
+  <td class="detail-meta"><em>None</em></td>
+  <td style="text-align:center"><span class="badge badge-fail">OVERDUE</span></td>
+  <td class="detail-meta">Never reviewed</td>
+</tr>
+<tr>
+  <td><code>ACME-MDM-Admin</code></td>
+  <td class="detail-meta">Members of this group have admin access to the MDM platform.</td>
+  <td style="text-align:center"><span class="badge badge-fail">OVERDUE</span></td>
+  <td class="detail-meta">Never reviewed</td>
+</tr>
+<tr>
+  <td><code>ACME-SECOPS-MDE-RBAC</code></td>
+  <td class="detail-meta">Members of this group have access to security operations tools.</td>
+  <td style="text-align:center"><span class="badge badge-pass">CURRENT</span></td>
+  <td class="detail-meta">secops-lead on 2026-04-05</td>
+</tr>
+<tr>
+  <td><code>ACME-Audit-Testing-Admin</code></td>
+  <td class="detail-meta">Admin access for audit and compliance testing tools.</td>
+  <td style="text-align:center"><span class="badge badge-pass">CURRENT</span></td>
+  <td class="detail-meta">jsmith on 2026-04-20</td>
+</tr>
+</tbody>
+</table>
+<h2 id="stale">Stale Groups (3 unchanged &gt;2 years)</h2>
+<table>
+<thead><tr>
+  <th>Group</th><th style="text-align:center">Last Changed</th>
+  <th style="text-align:center">Members</th><th>Description</th>
+</tr></thead>
+<tbody><tr>
+  <td><code>ACME-ADMIN</code></td>
+  <td style="text-align:center" class="rate-bad">870 days</td>
+  <td style="text-align:center">4</td>
+  <td class="detail-meta"><em>None</em></td>
+</tr>
+<tr>
+  <td><code>ACME-Lab-Computers</code></td>
+  <td style="text-align:center" class="rate-bad">800 days</td>
+  <td style="text-align:center">120</td>
+  <td class="detail-meta">Legacy computer lab group. Retire when feasible.</td>
+</tr>
+<tr>
+  <td><code>ACME-Password-Solution-Access</code></td>
+  <td style="text-align:center" class="rate-bad">900 days</td>
+  <td style="text-align:center">1</td>
+  <td class="detail-meta"><em>None</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="drift">Membership Drift (2 groups with snapshots)</h2>
+<table>
+<thead><tr>
+  <th>Group</th><th style="text-align:center">Previous</th>
+  <th style="text-align:center">Current</th><th style="text-align:center">Change</th>
+</tr></thead>
+<tbody><tr>
+  <td><code>ACME-Audit-Testing-Admin</code></td>
+  <td style="text-align:center">0 <span class="detail-meta">(2026-04-20)</span></td>
+  <td style="text-align:center">2 <span class="detail-meta">(2026-04-20)</span></td>
+  <td style="text-align:center"><span style="color:var(--yellow)">+2 (+0%)</span></td>
+</tr>
+<tr>
+  <td><code>ACME-VPN-Users</code></td>
+  <td style="text-align:center">38 <span class="detail-meta">(2026-01-15)</span></td>
+  <td style="text-align:center">42 <span class="detail-meta">(2026-04-20)</span></td>
+  <td style="text-align:center"><span style="color:var(--yellow)">+4 (+10.5%)</span></td>
+</tr>
+</tbody>
+</table>
+<h2 id="scope-violations">Groups with Wrong Scope (should be Universal)</h2>
+<ul class="section-list"><li>
+  <span><code>ACME-Grad-Students</code></span>
+  <span class="badge badge-fail">Global</span>
+</li>
+<li>
+  <span><code>ACME-Lab-Computers</code></span>
+  <span class="badge badge-fail">Global</span>
+</li>
+</ul>
+<h2 id="missing-desc">Groups Missing Description (4 of 10)</h2>
+<ul class="section-list"><li><code>ACME-VPN-Users</code></li>
+<li><code>ACME-Grad-Students</code></li>
+<li><code>ACME-ADMIN</code></li>
+<li><code>ACME-Password-Solution-Access</code></li>
+</ul>
+<h2>Groups with Good Descriptions</h2>
+<table>
+<thead><tr><th>Group</th><th>Description</th></tr></thead>
+<tbody><tr>
+  <td><code>ACME-Endpoint-Admins</code></td>
+  <td>Members of this group have admin access to the endpoint management console.</td>
+</tr>
+<tr>
+  <td><code>ACME-ITS-Server-Admin</code></td>
+  <td>Admin access for server management. JS 12/11/25</td>
+</tr>
+<tr>
+  <td><code>ACME-MDM-Admin</code></td>
+  <td>Members of this group have admin access to the MDM platform.</td>
+</tr>
+<tr>
+  <td><code>ACME-SECOPS-MDE-RBAC</code></td>
+  <td>Members of this group have access to security operations tools.</td>
+</tr>
+<tr>
+  <td><code>ACME-Audit-Testing-Admin</code></td>
+  <td>Admin access for audit and compliance testing tools.</td>
+</tr>
+</tbody>
+</table>
+<div class="filter-section" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center">
+  <input id="group-filter-input" type="text" placeholder="Search groups…" style="flex:1;min-width:200px;padding:0.4rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-size:0.85rem;outline:none">
+  <div style="display:flex;gap:0.25rem">
+    <button class="filter-btn" data-filter="all" style="background:var(--accent);color:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.85rem;cursor:pointer;font-size:0.82rem;font-weight:600">All</button>
+    <button class="filter-btn" data-filter="compliant" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.85rem;cursor:pointer;font-size:0.82rem;font-weight:600">Compliant</button>
+    <button class="filter-btn" data-filter="non-compliant" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.85rem;cursor:pointer;font-size:0.82rem;font-weight:600">Non-Compliant</button>
+  </div>
+  <span id="filter-count" style="color:var(--text-muted);font-size:0.82rem"></span>
+</div>
+<script>
+(function() {
+  var input = document.getElementById('group-filter-input');
+  var countEl = document.getElementById('filter-count');
+  var activeFilter = 'all';
+
+  function getGroupDetails() {
+    var section = document.getElementById('group-details');
+    if (!section) return [];
+    var parent = section.parentElement || section.parentNode;
+    var all = [];
+    var sibling = section.nextElementSibling;
+    while (sibling) {
+      if (sibling.tagName === 'DETAILS' && sibling.hasAttribute('data-group-name')) {
+        all.push(sibling);
+      } else if (sibling.tagName !== 'DETAILS') {
+        break;
+      }
+      sibling = sibling.nextElementSibling;
+    }
+    return all;
+  }
+
+  function applyFilters() {
+    var searchText = (input.value || '').toLowerCase();
+    var details = getGroupDetails();
+    var total = details.length;
+    var visible = 0;
+    for (var i = 0; i < details.length; i++) {
+      var el = details[i];
+      var name = el.getAttribute('data-group-name') || '';
+      var compliant = el.getAttribute('data-compliant');
+      var matchesText = name.indexOf(searchText) !== -1;
+      var matchesCompliance = activeFilter === 'all' ||
+        (activeFilter === 'compliant' && compliant === 'true') ||
+        (activeFilter === 'non-compliant' && compliant === 'false');
+      if (matchesText && matchesCompliance) {
+        el.style.display = '';
+        visible++;
+      } else {
+        el.style.display = 'none';
+      }
+    }
+    countEl.textContent = 'Showing ' + visible + ' of ' + total + ' groups';
+  }
+
+  function setActiveButton(selected) {
+    var btns = document.querySelectorAll('.filter-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var btn = btns[i];
+      if (btn.getAttribute('data-filter') === selected) {
+        btn.style.background = 'var(--accent)';
+        btn.style.color = 'var(--bg)';
+      } else {
+        btn.style.background = 'var(--surface2)';
+        btn.style.color = 'var(--text)';
+      }
+    }
+  }
+
+  input.addEventListener('input', applyFilters);
+
+  var btns = document.querySelectorAll('.filter-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function() {
+      activeFilter = this.getAttribute('data-filter');
+      setActiveButton(activeFilter);
+      applyFilters();
+    });
+  }
+
+  applyFilters();
+})();
+</script>
+<h2 id="group-details">Group Details (click to expand)</h2>
+<details data-group-name="acme-endpoint-admins" data-compliant="true">
+<summary>
+  <span class="group-name"><code>ACME-Endpoint-Admins</code></span>
+  <span class="group-status"><span class="badge badge-pass">COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>5</strong> &nbsp;|&nbsp; Last changed: 30 days ago</p>
+  <p class="detail-meta">Owner: CN=jsmith,OU=Users,DC=corp,DC=example,DC=com</p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Members of this group have admin access to the endpoint management console.</p>
+  <p class="detail-meta" style="margin-top:0.5rem">Last review: <strong>jsmith</strong> on 2026-03-20 <span class="detail-meta">(source: AD)</span></p>
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Owner (managedBy) is assigned</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (5) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Review is recent (30 days ago, within 365-day window)</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 30 days ago)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Privileged review is current (30 days ago, within 90-day window)</td>
+</tr>
+</tbody>
+</table>
+  <h3 style="font-size:0.82rem;color:var(--accent);margin:0.75rem 0 0.25rem">Extended Attributes</h3>
+<table><tbody><tr><td class='detail-meta'>Last reviewed by</td><td>jsmith</td></tr>
+<tr><td class='detail-meta'>Last reviewed date</td><td>2026-03-20</td></tr>
+</tbody></table>
+</div>
+</details>
+<details data-group-name="acme-its-server-admin" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-ITS-Server-Admin</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>3</strong> &nbsp;|&nbsp; Last changed: 39 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Admin access for server management. JS 12/11/25</p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (3) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 39 days ago)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Privileged group has no governance review (required every 90 days)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-vpn-users" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-VPN-Users</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>42</strong> &nbsp;|&nbsp; Last changed: 120 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: <em>None</em></p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Description is missing or empty</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (42) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 120 days ago)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-grad-students" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-Grad-Students</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Global</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>87</strong> &nbsp;|&nbsp; Last changed: 219 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: <em>None</em></p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Description is missing or empty</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (87) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 219 days ago)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-admin" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-ADMIN</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span> <span class="badge badge-fail">STALE</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>4</strong> &nbsp;|&nbsp; Last changed: 870 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: <em>None</em></p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Name &#x27;ACME-ADMIN&#x27; does not follow Prefix-System-Role format</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Description is missing or empty</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (4) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Group is stale (last changed 870 days ago, exceeds 730-day threshold)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Privileged group has no governance review (required every 90 days)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-mdm-admin" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-MDM-Admin</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>6</strong> &nbsp;|&nbsp; Last changed: 239 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Members of this group have admin access to the MDM platform.</p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (6) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 239 days ago)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Privileged group has no governance review (required every 90 days)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-lab-computers" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-Lab-Computers</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span> <span class="badge badge-fail">STALE</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Global</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>120</strong> &nbsp;|&nbsp; Last changed: 800 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Legacy computer lab group. Retire when feasible.</p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Name &#x27;ACME-Lab-Computers&#x27; does not follow Prefix-System-Role format</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (120) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Group is stale (last changed 800 days ago, exceeds 730-day threshold)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-secops-mde-rbac" data-compliant="true">
+<summary>
+  <span class="group-name"><code>ACME-SECOPS-MDE-RBAC</code></span>
+  <span class="group-status"><span class="badge badge-pass">COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>6</strong> &nbsp;|&nbsp; Last changed: 15 days ago</p>
+  <p class="detail-meta">Owner: CN=secops-lead,OU=Users,DC=corp,DC=example,DC=com</p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Members of this group have access to security operations tools.</p>
+  <p class="detail-meta" style="margin-top:0.5rem">Last review: <strong>secops-lead</strong> on 2026-04-05</p>
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Owner (managedBy) is assigned</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (6) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Review is recent (15 days ago, within 365-day window)</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 15 days ago)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Privileged review is current (15 days ago, within 90-day window)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-password-solution-access" data-compliant="false">
+<summary>
+  <span class="group-name"><code>ACME-Password-Solution-Access</code></span>
+  <span class="group-status"><span class="badge badge-fail">NON-COMPLIANT</span> <span class="badge badge-fail">STALE</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>1</strong> &nbsp;|&nbsp; Last changed: 900 days ago</p>
+  <p class="detail-meta">Owner: <em>None</em></p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: <em>None</em></p>
+  
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Description is missing or empty</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Owner (managedBy) is missing or empty</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (1) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">No governance review recorded</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-fail">FAIL</span></td>
+  <td class="detail-meta">Group is stale (last changed 900 days ago, exceeds 730-day threshold)</td>
+</tr>
+</tbody>
+</table>
+  
+</div>
+</details>
+<details data-group-name="acme-audit-testing-admin" data-compliant="true">
+<summary>
+  <span class="group-name"><code>ACME-Audit-Testing-Admin</code></span>
+  <span class="group-status"><span class="badge badge-pass">COMPLIANT</span> <span class="badge badge-warn">PRIVILEGED</span></span>
+</summary>
+<div class="detail-body">
+  <p class="detail-meta">Scope: <strong>Universal</strong> &nbsp;|&nbsp; Type: <strong>Security</strong> &nbsp;|&nbsp; Members: <strong>2</strong> &nbsp;|&nbsp; Last changed: 0 days ago</p>
+  <p class="detail-meta">Owner: CN=jsmith,OU=Users,DC=corp,DC=example,DC=com</p>
+  <p class="detail-meta" style="margin-bottom:0.75rem">Description: Admin access for audit and compliance testing tools.</p>
+  <p class="detail-meta" style="margin-top:0.5rem">Last review: <strong>jsmith</strong> on 2026-04-20</p>
+  <table>
+<thead><tr><th>Rule</th><th style="text-align:center">Status</th><th>Message</th></tr></thead>
+<tbody><tr>
+  <td>naming</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Name matches naming convention</td>
+</tr>
+<tr>
+  <td>description</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Description is present</td>
+</tr>
+<tr>
+  <td>owner</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Owner (managedBy) is assigned</td>
+</tr>
+<tr>
+  <td>membership</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Member count (2) is within threshold (500)</td>
+</tr>
+<tr>
+  <td>review_recency</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Review is recent (0 days ago, within 365-day window)</td>
+</tr>
+<tr>
+  <td>stale_group</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Group is active (last changed 0 days ago)</td>
+</tr>
+<tr>
+  <td>privileged_review</td>
+  <td style="text-align:center"><span class="badge badge-pass">PASS</span></td>
+  <td class="detail-meta">Privileged review is current (0 days ago, within 90-day window)</td>
+</tr>
+</tbody>
+</table>
+  <h3 style="font-size:0.82rem;color:var(--accent);margin:0.75rem 0 0.25rem">Extended Attributes</h3>
+<table><tbody><tr><td class='detail-meta'>Last reviewed by</td><td>jsmith</td></tr>
+<tr><td class='detail-meta'>Last reviewed date</td><td>2026-04-20</td></tr>
+</tbody></table>
+</div>
+</details>
+
+<script type="application/json" id="report-metadata">{"generated_at": "2026-04-20T20:06:57.593308+00:00", "total_groups": 10, "compliant_count": 3, "compliance_pct": 30.0, "groups": [{"name": "ACME-Endpoint-Admins", "compliant": true, "member_count": 5, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": true}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": true}, {"rule_name": "stale_group", "passed": true}, {"rule_name": "privileged_review", "passed": true}]}, {"name": "ACME-ITS-Server-Admin", "compliant": false, "member_count": 3, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": true}, {"rule_name": "privileged_review", "passed": false}]}, {"name": "ACME-VPN-Users", "compliant": false, "member_count": 42, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": false}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": true}]}, {"name": "ACME-Grad-Students", "compliant": false, "member_count": 87, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": false}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": true}]}, {"name": "ACME-ADMIN", "compliant": false, "member_count": 4, "rules": [{"rule_name": "naming", "passed": false}, {"rule_name": "description", "passed": false}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": false}, {"rule_name": "privileged_review", "passed": false}]}, {"name": "ACME-MDM-Admin", "compliant": false, "member_count": 6, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": true}, {"rule_name": "privileged_review", "passed": false}]}, {"name": "ACME-Lab-Computers", "compliant": false, "member_count": 120, "rules": [{"rule_name": "naming", "passed": false}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": false}]}, {"name": "ACME-SECOPS-MDE-RBAC", "compliant": true, "member_count": 6, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": true}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": true}, {"rule_name": "stale_group", "passed": true}, {"rule_name": "privileged_review", "passed": true}]}, {"name": "ACME-Password-Solution-Access", "compliant": false, "member_count": 1, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": false}, {"rule_name": "owner", "passed": false}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": false}, {"rule_name": "stale_group", "passed": false}]}, {"name": "ACME-Audit-Testing-Admin", "compliant": true, "member_count": 2, "rules": [{"rule_name": "naming", "passed": true}, {"rule_name": "description", "passed": true}, {"rule_name": "owner", "passed": true}, {"rule_name": "membership", "passed": true}, {"rule_name": "review_recency", "passed": true}, {"rule_name": "stale_group", "passed": true}, {"rule_name": "privileged_review", "passed": true}]}]}</script>
+</div>
+<footer>
+  Generated by <strong>ad-groups-mcp</strong> &mdash; Read-only AD Group Audit Tool
+</footer>
+</body>
+</html>
