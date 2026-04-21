@@ -1,3 +1,7 @@
+# NOTE: This module is a copy of the canonical version in the ad-group-audit repo.
+# When modifying shared logic, update the ad-group-audit version first, then copy here.
+# See README.md for the sync process.
+
 """YAML-based policy evaluation logic for AD group compliance."""
 
 from __future__ import annotations

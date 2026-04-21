@@ -1,3 +1,7 @@
+# NOTE: This module is a copy of the canonical version in the ad-group-audit repo.
+# When modifying shared logic, update the ad-group-audit version first, then copy here.
+# See README.md for the sync process.
+
 """Pydantic data models for the AD Groups MCP server."""
 
 from __future__ import annotations
@@ -42,12 +46,16 @@ class GroupDetail(GroupSummary):
     member_count: int
     replication_metadata: ReplicationMetadata | None = None
     last_review: ReviewRecord | None = None
+    extension_attribute_1: str | None = None  # last reviewed by
+    extension_attribute_2: str | None = None  # last reviewed date
+    review_source: str | None = None  # "ad", "sqlite", "both", or "none"
 
 
 class ReviewConfirmation(BaseModel):
     group_dn: str
     reviewer: str
     reviewed_at: datetime
+    warnings: list[str] = []  # partial failure warnings
 
 
 class RuleResult(BaseModel):
@@ -98,7 +106,11 @@ class PolicyConfig(BaseModel):
     privileged_keywords: list[str] = ["Admin", "Server", "LAPS", "RBAC", "Root"]
     privileged_review_days: int = 90  # quarterly review for privileged groups
     acl_allow_list: list[str] = ["Domain Admins", "Enterprise Admins"]
-    search_base: str = ""  # OU to scope queries, e.g. "OU=CEC-Groups,OU=CEC,OU=Columbia,DC=ds,DC=sc,DC=edu"
+    search_base: str = ""  # OU to scope queries, e.g. "OU=MyGroups,OU=MyOrg,DC=example,DC=com"
+    extended_attribute_mapping: dict[str, str] = {
+        "reviewed_by": "extensionAttribute1",
+        "reviewed_date": "extensionAttribute2",
+    }
 
 
 class MembershipSnapshot(BaseModel):
@@ -106,6 +118,13 @@ class MembershipSnapshot(BaseModel):
     member_count: int
     snapshot_at: datetime
     reviewer: str
+
+
+class AuditSnapshot(BaseModel):
+    compliance_pct: float
+    total_groups: int
+    compliant_count: int
+    snapshot_at: datetime
 
 
 class ReviewCoverage(BaseModel):

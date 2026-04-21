@@ -43,6 +43,9 @@ Desktop.ini
 *.html
 !docs/*.html
 
+# SOP documents (contain org-specific procedures)
+docs/SOP-*.md
+
 # Kiro workspace config (contains local MCP settings)
 .kiro/
 

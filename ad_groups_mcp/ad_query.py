@@ -1,3 +1,7 @@
+# NOTE: This module is a copy of the canonical version in the ad-group-audit repo.
+# When modifying shared logic, update the ad-group-audit version first, then copy here.
+# See README.md for the sync process.
+
 """AD Query Layer — PowerShell subprocess wrappers for AD cmdlets.
 
 This module provides async functions that shell out to PowerShell
@@ -116,7 +120,7 @@ async def get_all_ad_groups() -> list[dict]:
     Always returns a list, even when PowerShell returns a single object.
     """
     script = (
-        "Get-ADGroup -Filter * -Properties Description,ManagedBy "
+        "Get-ADGroup -Filter * -Properties Description,ManagedBy,extensionAttribute1,extensionAttribute2 "
         "| ConvertTo-Json -Depth 3"
     )
     result = await run_ps_command(script)
@@ -134,10 +138,47 @@ async def get_groups_in_ou(search_base: str) -> list[dict]:
     safe_base = search_base.replace("'", "''")
     script = (
         f"Get-ADGroup -Filter * -SearchBase '{safe_base}' -SearchScope OneLevel "
-        "-Properties Description,ManagedBy "
+        "-Properties Description,ManagedBy,extensionAttribute1,extensionAttribute2 "
         "| ConvertTo-Json -Depth 3"
     )
     result = await run_ps_command(script)
     if isinstance(result, dict):
         return [result] if result else []
     return result if isinstance(result, list) else []
+
+
+_DEFAULT_ATTR_MAPPING: dict[str, str] = {
+    "reviewed_by": "extensionAttribute1",
+    "reviewed_date": "extensionAttribute2",
+}
+
+
+async def set_ad_group_review_attrs(
+    identity: str,
+    reviewer: str,
+    review_date: str,
+    attr_mapping: dict[str, str] | None = None,
+) -> None:
+    """Update extensionAttribute1/2 on an AD group via Set-ADGroup.
+
+    Parameters:
+        identity: Group SAM name or DN.
+        reviewer: Username to write to extensionAttribute1.
+        review_date: YYYY-MM-DD string to write to extensionAttribute2.
+        attr_mapping: Optional override for attribute names.
+
+    Raises RuntimeError on PowerShell failure.
+    """
+    mapping = attr_mapping or _DEFAULT_ATTR_MAPPING
+    attr1 = mapping.get("reviewed_by", "extensionAttribute1")
+    attr2 = mapping.get("reviewed_date", "extensionAttribute2")
+
+    safe_identity = identity.replace("'", "''")
+    safe_reviewer = reviewer.replace("'", "''")
+    safe_date = review_date.replace("'", "''")
+
+    script = (
+        f"Set-ADGroup -Identity '{safe_identity}' "
+        f"-Replace @{{'{attr1}'='{safe_reviewer}';'{attr2}'='{safe_date}'}}"
+    )
+    await run_ps_command(script)
