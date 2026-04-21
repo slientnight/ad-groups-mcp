@@ -11,7 +11,11 @@ A read-only Active Directory group management MCP (Model Context Protocol) serve
 ## Install
 
 ```bash
-pip install -e ".[dev]"
+# Runtime only
+pip install -r requirements.txt
+
+# With dev/test dependencies
+pip install -r requirements-dev.txt
 ```
 
 ## Run
